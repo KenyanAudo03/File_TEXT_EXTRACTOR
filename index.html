@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Text Extractor</title>
+
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <!-- Tesseract.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.0.2/tesseract.min.js"></script>
+    <!-- Mammoth.js for DOCX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+
+    <!-- Styles for the page -->
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #4a90e2;
+            margin-bottom: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .input-group span {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        input[type="file"], input[type="password"] {
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4a90e2;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #357abd;
+        }
+        .afterupload, .loading {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            resize: none;
+        }
+        select {
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .loading-indicator {
+            border: 5px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 5px solid #4a90e2;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        a.download {
+            display: inline-block;
+            margin-top: 10px;
+            background-color: #4caf50;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        a.download:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>PDF/DOCX/TXT/PNG/JPG Text Extractor</h1>
+    <div class="container">
+        <!-- Input group for file upload and password -->
+        <div class="input-group">
+            <span>Select File:</span>
+            <input type="file" class="selectfile" accept=".pdf,.jpg,.jpeg,.png,.docx,.txt">
+        </div>
+        <div class="input-group">
+            <span>Password (for PDF, optional):</span>
+            <input type="password" class="pwd" placeholder="optional">
+        </div>
+        <button class="upload">Upload & Extract</button>
+
+        <!-- Loading indicator -->
+        <div class="loading">
+            <div class="loading-indicator"></div>
+            <span>Processing...</span>
+        </div>
+
+        <!-- After upload section -->
+        <div class="afterupload">
+            <span>Select Page:</span>
+            <select class="selectpage" onchange="afterProcess()"></select>
+            <a href="" class="download" download>Download Text</a>
+            <textarea class="pdftext" readonly></textarea>
+        </div>
+
+        <button class="another" style="display:none;" onclick="location.reload()">Extract Another File</button>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js";
+
+        let fileInput = document.querySelector(".selectfile");
+        let pwd = document.querySelector(".pwd");
+        let uploadButton = document.querySelector(".upload");
+        let afterUpload = document.querySelector(".afterupload");
+        let pageSelect = document.querySelector(".selectpage");
+        let downloadLink = document.querySelector(".download");
+        let textArea = document.querySelector(".pdftext");
+        let loadingIndicator = document.querySelector(".loading");
+        let allText = [];
+
+        uploadButton.addEventListener('click', () => {
+            let file = fileInput.files[0];
+            if (!file) {
+                alert("Please select a file");
+                return;
+            }
+
+            // Show the loading indicator
+            loadingIndicator.style.display = "flex";
+            uploadButton.disabled = true;
+
+            let fileType = file.type;
+
+            // Handle PDF files
+            if (fileType === "application/pdf") {
+                let fr = new FileReader();
+                fr.readAsDataURL(file);
+                fr.onload = () => {
+                    let result = fr.result;
+                    extractPDFText(result, pwd.value);
+                };
+            }
+            // Handle Images (JPG, PNG) using Tesseract.js for OCR
+            else if (fileType === "image/jpeg" || fileType === "image/png") {
+                Tesseract.recognize(file, 'eng').then(({ data: { text } }) => {
+                    allText = [text];
+                    displayText();
+                }).catch(err => {
+                    alert("Error in extracting text from image: " + err.message);
+                    resetLoading();
+                });
+            }
+            // Handle DOCX files using Mammoth.js
+            else if (fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+                let reader = new FileReader();
+                reader.readAsArrayBuffer(file);
+                reader.onload = function (event) {
+                    mammoth.extractRawText({ arrayBuffer: event.target.result })
+                        .then(function (result) {
+                            allText = [result.value]; // Raw text
+                            displayText();
+                        }).catch(err => {
+                            alert("Error in extracting text from DOCX: " + err.message);
+                            resetLoading();
+                        });
+                };
+            }
+            // Handle TXT files
+            else if (fileType === "text/plain") {
+                let fr = new FileReader();
+                fr.readAsText(file);
+                fr.onload = () => {
+                    allText = [fr.result];
+                    displayText();
+                };
+            } else {
+                alert("Unsupported file type. Please select a PDF, DOCX, TXT, or Image file.");
+                resetLoading();
+            }
+        });
+
+        // Function to extract text from PDF
+        async function extractPDFText(url, password) {
+            try {
+                let pdf;
+                if (password) {
+                    pdf = await pdfjsLib.getDocument({ url: url, password: password }).promise;
+                } else {
+                    pdf = await pdfjsLib.getDocument(url).promise;
+                }
+                let pages = pdf.numPages;
+                for (let i = 1; i <= pages; i++) {
+                    let page = await pdf.getPage(i);
+                    let txt = await page.getTextContent();
+                    let text = txt.items.map((s) => s.str).join("");
+                    allText.push(text);
+                }
+                displayText();
+                populatePageSelect(pages);
+            } catch (err) {
+                alert("Error in extracting text from PDF: " + err.message);
+                resetLoading();
+            }
+        }
+
+        // Display extracted text in the textarea
+        function displayText() {
+            textArea.value = allText[0];
+            downloadLink.href = "data:text/plain;charset=utf-8," + encodeURIComponent(allText[0]);
+            afterUpload.style.display = "flex";
+            document.querySelector(".another").style.display = "block";
+            resetLoading();
+        }
+
+        // Populate the page selector for multi-page PDF
+        function populatePageSelect(pages) {
+            for (let i = 1; i <= pages; i++) {
+                pageSelect.innerHTML += `<option value="${i}">${i}</option>`;
+            }
+            pageSelect.addEventListener('change', () => {
+                textArea.value = allText[pageSelect.value - 1];
+                downloadLink.href = "data:text/plain;charset=utf-8," + encodeURIComponent(allText[pageSelect.value - 1]);
+            });
+        }
+
+        // Function to reset loading state
+        function resetLoading() {
+            loadingIndicator.style.display = "none";
+            uploadButton.disabled = false;
+        }
+    </script>
+</body>
+</html>
