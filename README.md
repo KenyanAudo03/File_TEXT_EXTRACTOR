@@ -28,7 +28,7 @@ A web-based tool to extract text from PDF, DOCX, TXT, PNG, and JPG files. It sup
 Clone the repository:
 ```bash
 git clone https://github.com/KenyanAudo03/File_TEXT_EXTRACTOR.git
-cd text-extractor
+cd File_TEXT_EXTRACTOR  
 ```
 Open `index.html` in your browser.
 
