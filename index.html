@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>File Text Extractor</title>
 
     <!-- PDF.js -->
@@ -15,261 +15,438 @@
 
     <!-- Styles for the page -->
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f5f5f5;
-            color: #333;
-            margin: 0;
-            padding: 20px;
-        }
-        h1 {
-            text-align: center;
-            color: #4a90e2;
-            margin-bottom: 20px;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-        }
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .input-group span {
-            font-size: 18px;
-            margin-bottom: 5px;
-        }
-        input[type="file"], input[type="password"] {
-            padding: 10px;
-            font-size: 16px;
-            width: 100%;
-            max-width: 400px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        button {
-            background-color: #4a90e2;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        button:hover {
-            background-color: #357abd;
-        }
-        .afterupload, .loading {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-        }
-        textarea {
-            width: 100%;
-            height: 200px;
-            padding: 10px;
-            margin-top: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            resize: none;
-        }
-        select {
-            padding: 10px;
-            font-size: 16px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .loading-indicator {
-            border: 5px solid #f3f3f3;
-            border-radius: 50%;
-            border-top: 5px solid #4a90e2;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 10px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        a.download {
-            display: inline-block;
-            margin-top: 10px;
-            background-color: #4caf50;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 5px;
-            text-decoration: none;
-        }
-        a.download:hover {
-            background-color: #45a049;
-        }
-    </style>
-</head>
-<body>
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #f5f5f5;
+        color: #333;
+        margin: 0;
+        padding: 20px;
+      }
 
+      h1 {
+        text-align: center;
+        color: #4a90e2;
+        margin-bottom: 20px;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .input-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .input-group span {
+        font-size: 18px;
+        margin-bottom: 5px;
+      }
+
+      input[type="file"],
+      input[type="password"] {
+        padding: 10px;
+        font-size: 16px;
+        width: 100%;
+        max-width: 400px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+
+      button {
+        background-color: #4a90e2;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+
+      button:hover {
+        background-color: #357abd;
+      }
+
+      .afterupload,
+      .loading {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .preview {
+        width: 100%;
+        max-height: 300px; /* Set a max height to prevent it from growing too large */
+        padding: 10px;
+        margin-top: 10px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #fafafa;
+        overflow-y: auto; /* Allow vertical scrolling if content overflows */
+        white-space: pre-wrap;
+      }
+
+      .original-preview {
+        margin-top: 20px;
+        width: 100%; /* Make it full width */
+        text-align: center;
+      }
+
+      .original-preview .page-content {
+        display: flex;
+        flex-direction: column; /* Stack canvases vertically */
+        align-items: center;
+        max-height: 400px; /* Limit the height to prevent overflow */
+        overflow-y: auto; /* Enable scrolling for original page previews */
+        width: 100%;
+      }
+
+      .page-content canvas {
+        margin-bottom: 20px; /* Space between canvases */
+        max-width: 100%; /* Make sure canvas doesn't overflow horizontally */
+        height: auto;
+      }
+
+      /* Adjust margins and spacing */
+      .copy-btn {
+        margin-top: 10px;
+      }
+
+      .another {
+        margin-top: 20px;
+      }
+      select {
+        padding: 10px;
+        font-size: 16px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+
+      .loading-indicator {
+        border: 5px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 5px solid #4a90e2;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 10px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      a.download {
+        display: inline-block;
+        margin-top: 10px;
+        background-color: #4caf50;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 5px;
+        text-decoration: none;
+      }
+
+      a.download:hover {
+        background-color: #45a049;
+      }
+
+      .copy-btn {
+        background-color: #ff9800;
+        margin-top: 10px;
+      }
+
+      .copy-btn:hover {
+        background-color: #e68a00;
+      }
+      .notification {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: #4caf50;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        font-size: 16px;
+        z-index: 1000;
+        opacity: 1;
+        transition: opacity 0.5s ease;
+      }
+      .notification.fade-out {
+        opacity: 0;
+      }
+      .page-content {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+
+  <body>
     <h1>PDF/DOCX/TXT/PNG/JPG Text Extractor</h1>
     <div class="container">
-        <!-- Input group for file upload and password -->
+      <!-- Input group for file upload and password -->
+      <div class="input-form">
         <div class="input-group">
-            <span>Select File:</span>
-            <input type="file" class="selectfile" accept=".pdf,.jpg,.jpeg,.png,.docx,.txt">
+          <span>Select File:</span>
+          <input
+            type="file"
+            class="selectfile"
+            accept=".pdf,.jpg,.jpeg,.png,.docx,.txt"
+          />
         </div>
         <div class="input-group">
-            <span>Password (for PDF, optional):</span>
-            <input type="password" class="pwd" placeholder="optional">
+          <span>Password (for PDF, optional):</span>
+          <input type="password" class="pwd" placeholder="optional" />
         </div>
         <button class="upload">Upload & Extract</button>
+      </div>
 
-        <!-- Loading indicator -->
-        <div class="loading">
-            <div class="loading-indicator"></div>
-            <span>Processing...</span>
-        </div>
+      <!-- Loading indicator -->
+      <div class="loading">
+        <div class="loading-indicator"></div>
+        <span>Processing...</span>
+      </div>
 
-        <!-- After upload section -->
-        <div class="afterupload">
-            <span>Select Page:</span>
-            <select class="selectpage" onchange="afterProcess()"></select>
-            <a href="" class="download" download>Download Text</a>
-            <textarea class="pdftext" readonly></textarea>
-        </div>
+      <!-- After upload section -->
+      <div class="afterupload">
+        <span class="selectpage-label" style="display: none">Select Page:</span>
+        <select class="selectpage"></select>
 
-        <button class="another" style="display:none;" onclick="location.reload()">Extract Another File</button>
+        <div class="original-preview">
+            <h3>Original Pages Preview</h3>
+            <div class="page-content"></div>
+          </div>
+          
+        <a href="" class="download" download>Download Text</a>
+        <button class="copy-btn">Copy Text</button>
+        <div class="preview"></div>
+
+        <!-- New section to display the original pages -->
+        
+      </div>
+
+      <!-- Button to extract another file -->
+      <button class="another" style="display: none" onclick="location.reload()">
+        Extract Another File
+      </button>
     </div>
 
-    <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js";
 
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js";
+  
         let fileInput = document.querySelector(".selectfile");
         let pwd = document.querySelector(".pwd");
         let uploadButton = document.querySelector(".upload");
         let afterUpload = document.querySelector(".afterupload");
         let pageSelect = document.querySelector(".selectpage");
         let downloadLink = document.querySelector(".download");
-        let textArea = document.querySelector(".pdftext");
+        let previewDiv = document.querySelector(".preview");
         let loadingIndicator = document.querySelector(".loading");
+        let copyButton = document.querySelector(".copy-btn");
         let allText = [];
-
-        uploadButton.addEventListener('click', () => {
-            let file = fileInput.files[0];
-            if (!file) {
-                alert("Please select a file");
-                return;
-            }
-
-            // Show the loading indicator
-            loadingIndicator.style.display = "flex";
-            uploadButton.disabled = true;
-
-            let fileType = file.type;
-
-            // Handle PDF files
-            if (fileType === "application/pdf") {
-                let fr = new FileReader();
-                fr.readAsDataURL(file);
-                fr.onload = () => {
-                    let result = fr.result;
-                    extractPDFText(result, pwd.value);
-                };
-            }
-            // Handle Images (JPG, PNG) using Tesseract.js for OCR
-            else if (fileType === "image/jpeg" || fileType === "image/png") {
-                Tesseract.recognize(file, 'eng').then(({ data: { text } }) => {
-                    allText = [text];
-                    displayText();
-                }).catch(err => {
-                    alert("Error in extracting text from image: " + err.message);
-                    resetLoading();
-                });
-            }
-            // Handle DOCX files using Mammoth.js
-            else if (fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-                let reader = new FileReader();
-                reader.readAsArrayBuffer(file);
-                reader.onload = function (event) {
-                    mammoth.extractRawText({ arrayBuffer: event.target.result })
-                        .then(function (result) {
-                            allText = [result.value]; // Raw text
-                            displayText();
-                        }).catch(err => {
-                            alert("Error in extracting text from DOCX: " + err.message);
-                            resetLoading();
-                        });
-                };
-            }
-            // Handle TXT files
-            else if (fileType === "text/plain") {
-                let fr = new FileReader();
-                fr.readAsText(file);
-                fr.onload = () => {
-                    allText = [fr.result];
-                    displayText();
-                };
-            } else {
-                alert("Unsupported file type. Please select a PDF, DOCX, TXT, or Image file.");
+        let pdf; // Define pdf globally to use it across functions
+  
+        uploadButton.addEventListener("click", () => {
+          let file = fileInput.files[0];
+          if (!file) {
+            showNotification("Please select a file");
+            return;
+          }
+  
+          // Show the loading indicator and hide the form
+          loadingIndicator.style.display = "flex";
+          document.querySelector(".input-form").style.display = "none";
+  
+          let fileType = file.type;
+  
+          // Handle PDF files
+          if (fileType === "application/pdf") {
+            let fr = new FileReader();
+            fr.readAsDataURL(file);
+            fr.onload = () => {
+              let result = fr.result;
+              extractPDFText(result, pwd.value);
+            };
+          }
+          // Handle Images (JPG, PNG) using Tesseract.js for OCR
+          else if (fileType === "image/jpeg" || fileType === "image/png") {
+            Tesseract.recognize(file, "eng")
+              .then(({ data: { text } }) => {
+                allText = [text];
+                displayText(1); // Display first page by default for images
+                completeUpload(); // Complete the upload process
+              })
+              .catch((err) => {
+                showNotification(
+                  "Error in extracting text from image: " + err.message
+                );
                 resetLoading();
-            }
+              });
+          }
+          // Handle DOCX files using Mammoth.js
+          else if (
+            fileType ===
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          ) {
+            let reader = new FileReader();
+            reader.readAsArrayBuffer(file);
+            reader.onload = function (event) {
+              mammoth
+                .convertToHtml({ arrayBuffer: event.target.result })
+                .then(function (result) {
+                  allText = [result.value]; // HTML formatted text
+                  displayText(1); // Display first page for DOCX files
+                  completeUpload(); // Complete the upload process
+                })
+                .catch((err) => {
+                  showNotification(
+                    "Error in extracting text from DOCX: " + err.message
+                  );
+                  resetLoading();
+                });
+            };
+          }
+          // Handle TXT files
+          else if (fileType === "text/plain") {
+            let fr = new FileReader();
+            fr.readAsText(file);
+            fr.onload = () => {
+              allText = [fr.result.replace(/\n/g, "<br>")]; // Convert line breaks
+              displayText(1); // Display first page for TXT files
+              completeUpload(); // Complete the upload process
+            };
+          } else {
+            showNotification(
+              "Unsupported file type. Please select a PDF, DOCX, TXT, or Image file."
+            );
+            resetLoading();
+          }
         });
-
+  
         // Function to extract text from PDF
         async function extractPDFText(url, password) {
-            try {
-                let pdf;
-                if (password) {
-                    pdf = await pdfjsLib.getDocument({ url: url, password: password }).promise;
-                } else {
-                    pdf = await pdfjsLib.getDocument(url).promise;
-                }
-                let pages = pdf.numPages;
-                for (let i = 1; i <= pages; i++) {
-                    let page = await pdf.getPage(i);
-                    let txt = await page.getTextContent();
-                    let text = txt.items.map((s) => s.str).join("");
-                    allText.push(text);
-                }
-                displayText();
-                populatePageSelect(pages);
-            } catch (err) {
-                alert("Error in extracting text from PDF: " + err.message);
-                resetLoading();
+          try {
+            if (password) {
+              pdf = await pdfjsLib.getDocument({ url: url, password: password })
+                .promise;
+            } else {
+              pdf = await pdfjsLib.getDocument(url).promise;
             }
-        }
-
-        // Display extracted text in the textarea
-        function displayText() {
-            textArea.value = allText[0];
-            downloadLink.href = "data:text/plain;charset=utf-8," + encodeURIComponent(allText[0]);
-            afterUpload.style.display = "flex";
-            document.querySelector(".another").style.display = "block";
-            resetLoading();
-        }
-
-        // Populate the page selector for multi-page PDF
-        function populatePageSelect(pages) {
+            let pages = pdf.numPages;
+  
             for (let i = 1; i <= pages; i++) {
-                pageSelect.innerHTML += `<option value="${i}">${i}</option>`;
+              let page = await pdf.getPage(i);
+              let txt = await page.getTextContent();
+              let text = txt.items.map((s) => s.str).join("");
+              allText.push(text.replace(/\n/g, "<br>")); // Store each page's text
             }
-            pageSelect.addEventListener('change', () => {
-                textArea.value = allText[pageSelect.value - 1];
-                downloadLink.href = "data:text/plain;charset=utf-8," + encodeURIComponent(allText[pageSelect.value - 1]);
-            });
+  
+            // After extracting the text, render the first page by default
+            displayText(1); // Display page 1 text
+            renderPDFPage(1); // Render page 1 canvas
+            populatePageSelect(pages); // Populate the page selector
+            completeUpload(); // Complete the upload process
+          } catch (err) {
+            showNotification("Error in PDF extraction: " + err.message);
+            resetLoading();
+          }
         }
-
-        // Function to reset loading state
+  
+        // Populate page selection dropdown
+        function populatePageSelect(pages) {
+          pageSelect.innerHTML = "";
+          for (let i = 1; i <= pages; i++) {
+            let option = document.createElement("option");
+            option.value = i;
+            option.textContent = "Page " + i;
+            pageSelect.appendChild(option);
+          }
+  
+          pageSelect.onchange = (e) => {
+            displayText(parseInt(e.target.value));
+            renderPDFPage(parseInt(e.target.value));
+          };
+        }
+  
+        // Display extracted text
+        function displayText(page) {
+          previewDiv.innerHTML = allText[page - 1];
+        }
+  
+        // Function to render PDF page
+        function renderPDFPage(page) {
+          let canvas = document.createElement("canvas");
+          let context = canvas.getContext("2d");
+          pdf.getPage(page).then((p) => {
+            let viewport = p.getViewport({ scale: 1 });
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+  
+            let renderContext = {
+              canvasContext: context,
+              viewport: viewport,
+            };
+            p.render(renderContext);
+            document.querySelector(".page-content").innerHTML = "";
+            document.querySelector(".page-content").appendChild(canvas);
+          });
+        }
+  
+        // Function to show floating notifications
+        function showNotification(message) {
+          const notification = document.createElement("div");
+          notification.classList.add("notification");
+          notification.textContent = message;
+  
+          document.body.appendChild(notification);
+  
+          // Fade out after 3 seconds
+          setTimeout(() => {
+            notification.classList.add("fade-out");
+            setTimeout(() => {
+              document.body.removeChild(notification);
+            }, 500);
+          }, 3000);
+        }
+  
+        // Function to complete the upload process
+        function completeUpload() {
+          loadingIndicator.style.display = "none";
+          afterUpload.style.display = "flex"; // Show after upload section
+          document.querySelector(".another").style.display = "inline"; // Show extract another button
+        }
+  
+        // Reset loading state
         function resetLoading() {
-            loadingIndicator.style.display = "none";
-            uploadButton.disabled = false;
+          loadingIndicator.style.display = "none";
+          document.querySelector(".input-form").style.display = "block"; // Show form again
+          uploadButton.disabled = false;
         }
-    </script>
-</body>
+  
+        // Copy text to clipboard
+        copyButton.addEventListener("click", () => {
+          navigator.clipboard.writeText(allText.join("\n")).then(() => {
+            showNotification("Text copied to clipboard!");
+          });
+        });
+      </script>
+  </body>
 </html>
